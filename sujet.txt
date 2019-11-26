@@ -1,16 +1,12 @@
 12) compression des photos prises sur Mars
-(a) Objectifs Le but de ce projet est de construire le codeur ACP du rover Curiosity pour lui
-permettre de comprimer de manière optimum ses photos de la surface de Mars avant de les
-envoyer vers la Terre. Le décodeur correspondant, utilisé par le NASA Space Center sur Terre,
-sera également écrit.
-Les images Mars_dunes.jpg et Mars_Path_Finder.jpg du répertoire students_etudiants
-ont été téléchargées du site de la NASA:
+
+(a) Objectifs Le but de ce projet est de construire le codeur ACP du rover Curiosity pour lui permettre de comprimer de manière optimum ses photos de la surface de Mars avant de les envoyer vers la Terre. Le décodeur correspondant, utilisé par le NASA Space Center sur Terre, sera également écrit.
+Les images Mars_dunes.jpg et Mars_Path_Finder.jpg du répertoire students_etudiants ont été téléchargées du site de la NASA:
 http://mars.nasa.gov/msl/multimedia/images/?ImageID=7539
-L’ACP a été utilisée pour condenser le maximum d’information en utilisant le minimum de
-variables. Initialement, l’image est composée de trois matrices, une pour chaque couleur de
-base. Chaque composante correspond à un pixel.
-La procédure utilisée par Curiosity est fondée sur le même principe, mais comprend des raf-
-finements supplémentaires.
+L’ACP a été utilisée pour condenser le maximum d’information en utilisant le minimum de variables. Initialement, l’image est composée de trois matrices, une pour chaque couleur de base. Chaque composante correspond à un pixel.
+La procédure utilisée par Curiosity est fondée sur le même principe, mais comprend des raffinements supplémentaires.
+
+
 (b) Codage
 • Pour charger un fichier .jpeg et visualiser l’image, taper:
 Yini = single(imread(’Mars_dunes.jpg’));
@@ -20,14 +16,11 @@ trois = size(Yini,3);
 image(uint8(Yini))
 title(’image initiale’)
 axis equal
-• L’image n’est pas comprimée de manière globale mais bloc par bloc. Un bloc Y est un
-morceau rectangulaire de l lignes par c colonnes de la matrice Yini. Il vaut mieux d’abord
-choisir le nombre de blocs que l’on souhaite en horizontal et en vertical et écrire :
+• L’image n’est pas comprimée de manière globale mais bloc par bloc. Un bloc Y est un morceau rectangulaire de lignes par c colonnes de la matrice Yini. Il vaut mieux d’abord choisir le nombre de blocs que l’on souhaite en horizontal et en vertical et écrire :
 nl = 5;
 l = floor(ltot/nl);
-Chaque bloc Y doit être extrait de la matrice Yini et transformée en matrice X dans
-laquelle les lignes i sont les pixels du bloc et les colonnes j les trois composantes de la
-couleur du pixel. Cela peut être effectué à l’aide de la fonction Matlab reshape.
+
+Chaque bloc Y doit être extrait de la matrice Yini et transformée en matrice X dans laquelle les lignes i sont les pixels du bloc et les colonnes j les trois composantes de la couleur du pixel. Cela peut être effectué à l’aide de la fonction Matlab reshape.
 • Ecrire le codeur ACP dans une fonction indépendante:
 function [P,E,Ip] = codeur_ACP(X,p)
 où p is the nombre de variables principales que Curiosity doit transmettre à la Terre.
@@ -36,19 +29,12 @@ E, matrice correspondante des vecteurs propres
 Ip, vecteur contenant les pourcentages d’information portée par chaque variable principale.
 • Ecrire le décodeur ACP dans une fonction indépendante:
 function X = decodeur_ACP(P,E)
-• Utiliser trois boucles imbriquées sur p, i et j, où i et j sont les numéros des blocs le
-long des lignes et des colonnes. Pour chaque bloc, construire la matrice X, la coder puis la
-décoder. Transformer la matrice décodée en une matrice Y (l par c par 3). Enfin, insérer
-le bloc Y au bon endroit dans la matrice Yfin finale (de même taille que Yini).
+• Utiliser trois boucles imbriquées sur p, i et j, où i et j sont les numéros des blocs le long des lignes et des colonnes. Pour chaque bloc, construire la matrice X, la coder puis la décoder. Transformer la matrice décodée en une matrice Y (l par c par 3). Enfin, insérer le bloc Y au bon endroit dans la matrice Yfin finale (de même taille que Yini).
 • Visualiser la matrice Yfin pour chaque valeur de p.
+
+
 (c) Analyses
-• Pour chaque p, calculer le pourcentage moyen (entre les blocs) de l’information ACP que
-Curiosity a envoyé vers la Terre.
-• Pour chaque p, calculer, à l’aide de numel, une quantité proportionnelle au nombre de bits
-envoyés vers la Terre.
-• Commenter les résultats. Vous pourriez suggérer une recette pour déterminer les valeurs
-optimum des différents paramètres du problème, ou procéder à d’autres analyses ...
-• Si vous en avez le temps, appliquez la même procédure mais sans réaliser d’ACP. Curiosity
-envoie les p premières colonnes de la matrice X ainsi que les valeurs moyennes des 3-p
-dernières colonnes. Le décodage consiste à remplacer les 3-p dernières colonnes par leur
-valeur moyenne. Faire les mêmes analyses que dans le cas de l’ACP, commenter, conclure.
+• Pour chaque p, calculer le pourcentage moyen (entre les blocs) de l’information ACP que Curiosity a envoyé vers la Terre.
+• Pour chaque p, calculer, à l’aide de numel, une quantité proportionnelle au nombre de bits envoyés vers la Terre.
+• Commenter les résultats. Vous pourriez suggérer une recette pour déterminer les valeurs optimum des différents paramètres du problème, ou procéder à d’autres analyses ...
+• Si vous en avez le temps, appliquez la même procédure mais sans réaliser d’ACP. Curiosity envoie les p premières colonnes de la matrice X ainsi que les valeurs moyennes des 3-p dernières colonnes. Le décodage consiste à remplacer les 3-p dernières colonnes par leur valeur moyenne. Faire les mêmes analyses que dans le cas de l’ACP, commenter, conclure.
