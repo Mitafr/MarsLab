@@ -23,7 +23,7 @@ l = floor(ltot/nl);
 Chaque bloc Y doit être extrait de la matrice Yini et transformée en matrice X dans laquelle les lignes i sont les pixels du bloc et les colonnes j les trois composantes de la couleur du pixel. Cela peut être effectué à l’aide de la fonction Matlab reshape.
 • Ecrire le codeur ACP dans une fonction indépendante:
 function [P,E,Ip] = codeur_ACP(X,p)
-où p is the nombre de variables principales que Curiosity doit transmettre à la Terre.
+où p est le nombre de variables principales que Curiosity doit transmettre à la Terre.
 P, matrice des variables principales à p colonnes
 E, matrice correspondante des vecteurs propres
 Ip, vecteur contenant les pourcentages d’information portée par chaque variable principale.
