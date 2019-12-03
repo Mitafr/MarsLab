@@ -1,4 +1,8 @@
-Yini = single(imread('Mars_dunes.jpg'));
+clear;
+clc;
+
+Yini = single(imread('test2.jpg'));
+#Yini = single(imread('Mars_dunes.jpg'));
 
 function show_image(image_input, title)
   image(uint8(image_input))
@@ -8,67 +12,65 @@ endfunction
 
 function compare_images(I1, I2)
   figure,
-  title('image initiale'),
+  set(gcf,'numbertitle','off','name','image initiale'),
   imshow(uint8(I1));
   figure,
-  title('image finale'),
+  set(gcf,'numbertitle','off','name','image finale'),
   imshow(uint8(I2));
 endfunction
-
-function imageFinale = build_image(P,w,h)  
-  red = P(1:w*h, 1);
-  green = P(1:w*h,2);
-  blue = P(1:w*h,3);
-  colors = cat(1,red,green,blue);
-  imageFinale = reshape(colors, [w, h, 3]);
+function X = decodeur_ACP(P,E)
+  X = P*transpose(E);
   return;
 endfunction
-
-#show_image(Yini, 'image initiale');
 ltot = size(Yini,1);
 ctot = size(Yini,2);
 trois = size(Yini,3);
-X = reshape(Yini, [ltot*ctot, 3]);
+X = reshape(Yini, [ltot*ctot,3]);
+
+n=size(X,1);
+nl = 50;
+l = floor(ltot/nl);
+nc = 50;
+c = floor(ctot/nc);
+excedingLine = mod(ltot,nl);
+excedingCol = mod(ctot,nc);
+tbloc=[];
 
 function [P,E,Ip] = codeur_ACP(X,p)  
-  %{
-  TEST de bloc
-  nl = 50;
-  l = floor(ltot/nl);
-  tr = Yini(l:l,l:l*2,1);
-  tg = Yini(l:l,l:l*2,2);
-  tb = Yini(l:l,l:l*2,3);
-  trmoyenne = mean(tr);
-
-  blocknumber = 38456;
-  line=floor((blocknumber*l)/ltot);
-  b=mod(blocknumber*l, ltot);
-  bloc1=Yini(b+1:b+l,line,1:3);
-  X = reshape(squeeze(bloc1), [3, l]);
-  X = Ynew;
-  %}
-  Xcentre = X - repmat(mean(X), size(X,1), 1);
-
-  #Matrice centrée réduite
-  Xstandard =Xcentre./(e*std(X,1))
+  moyenneBloc=mean(X);
+  stdBloc=std(X);
+  Xcentre = X - repmat(moyenneBloc, size(X,1), 1);
+  Xreduite = (e*stdBloc);
+  Xstandard = (X - repmat(moyenneBloc,[size(X,1) 1])) ./ repmat(stdBloc,[size(X,1) 1]);
+  # Supression des NaN
+  Xstandard(isnan(Xstandard))=0;
 
   Vs = (Xcentre'*Xcentre)/size(Xcentre,2)-1;
   [E,D] = eig(cov(Xstandard));
+  
+  # Vs = E*((D/size(X,1)).^(1/2));
+  p=size(X,2)-p;
+  for i = 1:p
+    E(:,i) =[];
+  end
   P=Xstandard*E;
-  Ip=ones(1); #temporaire
+  Ip=cumsum(E) / sum(E); #temporaire
   return;
 endfunction
 
-function X = decodeur_ACP(P,E)
-  X = P*E';
-  return;
-endfunction
+for i = 1:l*c
+    xi=(i-1)*nl*nc;
+    bloc=X(xi+1:(xi+1+nl*nc)-1,:);
+    moyenneBloc=mean(bloc);
+    stdBloc=std(bloc);
+    
+    [P,E,Ip] = codeur_ACP(bloc,1);
+    Xfinal = decodeur_ACP(P, E);
+    
+    tbloc=cat(1,tbloc, Xfinal .* repmat(stdBloc,[size(bloc,1) 1]) + repmat(moyenneBloc,[size(bloc,1) 1]));
+endfor
+finalData = reshape(tbloc, [ltot,ctot,3]);
+compare_images(Yini, finalData);
+imwrite(uint8(Yini), "output_ini.jpg");
+imwrite(uint8(finalData), "output_final.jpg");
 
-[Pmat, Vmat, Ipmat] = codeur_ACP(reshape(Yini, [ltot*ctot, 3]),3);
-Xfinal = decodeur_ACP(Pmat, Vmat);
-moyenneX = mean(X);
-ecartTypeX = std(X);
-n=size(X,1);
-image = build_image(Xfinal .* repmat(ecartTypeX,[n 1]) + repmat(moyenneX,[n 1]),ltot,ctot);
-imwrite(uint8(image), "output.jpg");
-compare_images(Yini, image);
