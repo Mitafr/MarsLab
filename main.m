@@ -2,7 +2,7 @@ clear;
 clc;
 
 Yini = single(imread('test2.jpg'));
-%Yini = single(imread('Mars_dunes2.jpg'));
+%Yini = single(imread('Mars_dunes.jpg'));
 
 ltot = size(Yini,1);
 ctot = size(Yini,2);
@@ -10,17 +10,17 @@ trois = size(Yini,3);
 X = reshape(Yini, [ltot*ctot,3]);
 
 n=size(X,1);
-nl = 5;
+nl = 25;
 l = floor(ltot/nl);
-nc = 5;
+nc = 25;
 c = floor(ctot/nc);
 excedingLine = mod(ltot,nl);
 excedingCol = mod(ctot,nc);
 tbloc=[];
 counter=0;
-for i = 1:nl*nc:l*c
-    xi=(i-1)*nl*nc;
-    bloc=X(xi+1:(xi+1+nl*nc)-1,:);
+i=1;
+while i <= (ctot*ltot)
+    bloc=X(i:(i+nl*nc)-1,:);
     %{
     if ltot-xi < 0
         kk=xi+1-nl*nc;
@@ -32,16 +32,17 @@ for i = 1:nl*nc:l*c
     moyenneBloc=mean(bloc);
     stdBloc=std(bloc);
     
-    [P,E,Ip] = codeur_ACP(bloc,3);
+    [P,E,Ip] = codeur_ACP(bloc,1);
     Xfinal = decodeur_ACP(P, E);
     
     tbloc=cat(1,tbloc, Xfinal .* repmat(stdBloc,[size(bloc,1) 1]) + repmat(moyenneBloc,[size(bloc,1) 1]));
-    counter=counter+1;
+    i=i+nl*nc;
 end
 finalData = reshape(tbloc, ltot,ctot,trois);
 compare_images(Yini, finalData);
 imwrite(uint8(Yini), "output_ini.jpg");
 imwrite(uint8(finalData), "output_final.jpg");
+
 
 
 function show_image(image_input, title)
@@ -84,4 +85,3 @@ function [P,E,Ip] = codeur_ACP(X,p)
   P=Xstandard*E;
   return;
 end
-
