@@ -3,7 +3,7 @@ clc;
 
 
 Yini = single(imread('test2.jpg'));
-%Yini = single(imread('Mars_Path_Finder.jpg'));
+%Yini = single(imread('Mars_dunes.jpg'));
 
 ltot = size(Yini,1);
 ctot = size(Yini,2);
@@ -11,9 +11,9 @@ trois = size(Yini,3);
 X = reshape(Yini, [ltot*ctot,3]);
 
 n=size(X,1);
-nl = 100;
+nl = 80;
 l = floor(ltot/nl);
-nc = 100;
+nc = 80;
 c = floor(ltot/nc);
 
 tblocc=[];
@@ -42,7 +42,7 @@ while finl ~= true
         moyenneBloc=mean(bloc2d);
         stdBloc=std(bloc2d);
         [P,E,Ip] = codeur_ACP(bloc2d,1);
-        tIp=cat(1, tIp, Ip(1)); %temporaire
+        tIp=cat(1, tIp, sum(Ip)); %temporaire
         nm = numel(P);
         
         Xfinal = decodeur_ACP(P, E);
@@ -64,6 +64,8 @@ end
 compare_images(Yini, tblocl);
 imwrite(uint8(Yini), "output_ini.jpg");
 imwrite(uint8(tblocl), "output_final.jpg");
+msgbox(strcat("Quality : ", int2str(mean(tIp)), "%"));
+
 
 function show_image(image_input, title)
   image(uint8(image_input))
@@ -96,15 +98,15 @@ function [P,E,Ip] = codeur_ACP(X,p)
 
     Vs = (Xcentre'*Xcentre)/size(Xcentre,2)-1;
     [E,D] = eig(cov(Xstandard));
-    E=fliplr(E);
-    Ip=cumsum(var(Xstandard*E)) / sum(var(Xstandard*E)); %temporaire
+    latent=diag(D);
+    Ip=latent/sum(latent)*100;
     
-
-    % Vs = E*((D/size(X,1)).^(1/2));
     p=size(X,2)-p;
     for i = 1:p
         E(:,i)=[];
+        Ip(i)=[];
     end
+    Ip(isnan(Ip))=0;
     P=Xstandard*E;
     return;
 end
