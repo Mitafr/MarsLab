@@ -1,7 +1,6 @@
 clear;
 clc;
 
-
 Yini = single(imread('test2.jpg'));
 %Yini = single(imread('Mars_dunes.jpg'));
 
@@ -11,22 +10,29 @@ trois = size(Yini,3);
 X = reshape(Yini, [ltot*ctot,3]);
 
 n=size(X,1);
-nl = 80;
+nl = 3;
+nc = 3;
+ncomp = 1;
 l = floor(ltot/nl);
-nc = 80;
 c = floor(ltot/nc);
+numBitsSent = 0;
 
-tblocc=[];
-tblocl=[];
+Yfinal=[];
+Ybloc=[];
+
 i=1;
 j=1;
 nl2=nl;
 nc2=nc;
-finl=false;
 tIp=[];
+
+
+% end of line
+finl=false;
+% end of col
 finc=false;
 while finl ~= true
-    tblocc=[];
+    Ybloc=[];
     if nl2 >= ltot
       nl2 = ltot;
       finl = true;
@@ -36,24 +42,29 @@ while finl ~= true
             nc2 = ctot;
             finc=true;
         end
-        bloc1=Yini(i:nl2, j:nc2,:);
-        bloc2d=reshape(bloc1,(nl2+1-i)*(nc2+1-j),3);
+        bloc=Yini(i:nl2, j:nc2,:);
+        bloc2d=reshape(bloc,(nl2+1-i)*(nc2+1-j),3);
 
-        moyenneBloc=mean(bloc2d);
+        mu=mean(bloc2d);
         stdBloc=std(bloc2d);
-        [P,E,Ip] = codeur_ACP(bloc2d,1);
-        tIp=cat(1, tIp, sum(Ip)); %temporaire
-        nm = numel(P);
+        % Code current bloc
+        [P,E,Ip] = codeur_ACP(bloc2d,ncomp);
+        % Total informations portées pour chaque bloc
+        tIp=cat(1, tIp, sum(Ip));
         
+        numBitsSent = numBitsSent + numel(P);
+        
+        % Decode bloc
         Xfinal = decodeur_ACP(P, E);
-
-        Xfinal = Xfinal .* repmat(stdBloc,[size(bloc2d,1) 1]) + repmat(moyenneBloc,[size(bloc2d,1) 1]);
+        
+        % reconstruction du bloc
+        Xfinal = Xfinal + repmat(mu,[size(bloc2d,1) 1]);
         Xfinal=reshape(Xfinal,nl2-i+1,nc2-j+1,3);
-        tblocc=cat(2, tblocc, Xfinal);
+        Ybloc=cat(2, Ybloc, Xfinal);
         j = nc2+1;
         nc2 = nc2 + nc;
     end
-    tblocl=cat(1, tblocl, tblocc);
+    Yfinal=cat(1, Yfinal, Ybloc);
     i= nl2+1;
     nl2 = nl2+nl;
     j=1;
@@ -61,10 +72,11 @@ while finl ~= true
     finc=false;
 end
 
-compare_images(Yini, tblocl);
+compare_images(Yini, Yfinal);
 imwrite(uint8(Yini), "output_ini.jpg");
-imwrite(uint8(tblocl), "output_final.jpg");
+imwrite(uint8(Yfinal), "output_final.jpg");
 msgbox(strcat("Quality : ", int2str(mean(tIp)), "%"));
+msgbox(strcat("Nombre de Bits envoyés à la terre : ", int2str(numBitsSent), " bits"));
 
 
 function show_image(image_input, title)
@@ -82,31 +94,26 @@ function compare_images(I1, I2)
     imshow(uint8(I2));
 end
 function X = decodeur_ACP(P,E)
-    X = P*transpose(E);
+    X = P*E';
     return;
 end
 
 function [P,E,Ip] = codeur_ACP(X,p)  
     moyenneBloc=mean(X);
     stdBloc=std(X);
-
+    
     Xcentre = X - repmat(moyenneBloc, size(X,1), 1);
-    Xreduite = (eye()*stdBloc);
-    Xstandard = (X - repmat(moyenneBloc,[size(X,1) 1])) ./ repmat(stdBloc,[size(X,1) 1]);
-    % Supression des NaN
+    Xreduite = X / stdBloc;
+    Xstandard = Xcentre ./ repmat(stdBloc,[size(X,1) 1]);
+    % NaN Supression
     Xstandard(isnan(Xstandard))=0;
 
-    Vs = (Xcentre'*Xcentre)/size(Xcentre,2)-1;
     [E,D] = eig(cov(Xstandard));
     latent=diag(D);
     Ip=latent/sum(latent)*100;
     
-    p=size(X,2)-p;
-    for i = 1:p
-        E(:,i)=[];
-        Ip(i)=[];
-    end
-    Ip(isnan(Ip))=0;
-    P=Xstandard*E;
+    E = E(:,1:p);
+    Ip = Ip(1:p);
+    P=Xcentre*E;
     return;
 end
